@@ -4,6 +4,14 @@
 #define PIXY_MAX_X 320
 #define PIXY_MAX_Y 200
 #define DIST_CONST 20269
+#define MIN_DIST 200
+#define MIN_TOLERANCE 15
+#define MAX_SPEED 25
+#define HOR_OFFSET 8
+#define ROT_TOL 50
+#define SONAR_1 22
+#define SONAR_2 23
+
 
 //Layouts
 #define LAYOUT_A 0

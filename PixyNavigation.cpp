@@ -1,13 +1,18 @@
 
 #include "PixyNavigation.h"
 #include "Encoders.h"
+#include "Sonar.h"
 // This is the main Pixy object
+
 Pixy pixy;
 
 int16_t blocksig;
 bool haveBlock;
 int zone;
 int layout;
+
+Sonar sonar1(SONAR_1);
+Sonar sonar2(SONAR_2);
 int color;
 
 //This will hold the function that releases the block into the right container
@@ -16,7 +21,6 @@ void (*ptrBlockRelease)();
 void SetupPixy()
 {
   Serial.begin(9600);
-  Serial.println("Starting...\n");
   haveBlock = false;
   blocksig = -1;
   pixy.init();
@@ -68,7 +72,7 @@ void CheckPixy()
 
 void CheckHeight(int distance)
 {
-  int diff = ((PIXY_MAX_Y / 2) - (pixy.blocks[blocksig].y + (pixy.blocks[blocksig].height / 2)) );
+  int diff = ((PIXY_MAX_Y / 2) - (pixy.blocks[blocksig].y + (pixy.blocks[blocksig].height / 2)) ) ;
   
   if(distance < 60)
   { 
@@ -105,31 +109,39 @@ int CheckDistance()
 {
 
   int distance = DIST_CONST / pixy.blocks[blocksig].width;
+  int distanceSonar = sonar1.GetDistance();
+
+  if (sonar2.GetDistance() < distanceSonar)
+  {
+    distanceSonar = sonar2.GetDistance();
+  }
   static bool movingLeft = false;
   static bool movingRight = false;
   static bool movingFW = false;
   Serial.println(pixy.blocks[blocksig].x);
   //Serial.println(pixy.blocks[0].width);
 
-  float var = distance / 254;
-
-  int diff = (PIXY_MAX_X / 2) - (pixy.blocks[blocksig].x + (pixy.blocks[blocksig].width / 2));
-  var = 30.0 * var;
-
-   if (diff > var)
-   {
+  float centeringMod = (distance / MIN_DIST) * MIN_TOLERANCE;
+  int speed = 15;
+  
+  int diff = (PIXY_MAX_X / 2) - (pixy.blocks[blocksig].x + (pixy.blocks[blocksig].width / 2)) + HOR_OFFSET;
+  
+  if (distanceSonar > MIN_DIST)
+  {
+    if (diff > centeringMod)
+    {
       if(!movingLeft)
       {
         movingLeft = true;
         movingRight = false;
         movingFW = false;
         driveOff();
-        driveOn(DirLeft, 30, 5, 25);
-        Serial.println("Begin Left");
+        driveOn(DirLeft, speed, 5, 25);
+        //Serial.println("Begin Left");
       }
       //Serial.println("Moving Left");
     }
-    else if(diff < -var)
+    else if(diff < -centeringMod)
     {
       if(!movingRight)
       {
@@ -137,13 +149,13 @@ int CheckDistance()
         movingRight = true;
         movingFW = false;
         driveOff();
-        driveOn(DirRight, 30, 5, 25);
-        Serial.println("Begin Right");
+        driveOn(DirRight, speed, 5, 25);
+        //Serial.println("Begin Right");
       }
       //Serial.println("Moving Right");
       
     }
-    else if (distance > 254)
+    else
     {
       if(!movingFW)
       {
@@ -151,21 +163,43 @@ int CheckDistance()
         movingRight = false;
         movingFW = true;
         driveOff();
-        driveOn(DirForward, 30, 5, 25);
-        Serial.println("Begin FW");
+        driveOn(DirForward, speed, 5, 25);
+        //Serial.println("Begin FW");
       }  
-      Serial.println("Moving Forward");
+      //Serial.println("Moving Forward");
     }
-    else
-    {
-      driveOff();
-      movingLeft = false;
-      movingRight = false;
-      movingFW = false;
-      Serial.println("Stopping");
+  }
+  else
+  {
+    driveOff();
+    movingLeft = false;
+    movingRight = false;
+    movingFW = false;
+    //Serial.println("Stopping");
     }
   
     return distance;
+}
+
+void CenterRobot()
+{
+  int difference = sonar1.GetDistance() - sonar2.GetDistance();
+  if (difference > ROT_TOL)
+    {
+      driveOn(DirRotateRight, 10, 5, 25);
+    }
+    else if(difference < -ROT_TOL)
+    {
+      driveOn(DirRotateLeft, 10, 5, 25);
+    }
+  
+  while(difference > ROT_TOL || difference < -ROT_TOL)
+  {
+    difference = sonar1.GetDistance() - sonar2.GetDistance();
+  
+  }
+  driveOff();
+  
 }
 
 void MoveForward()

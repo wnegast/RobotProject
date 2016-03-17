@@ -7,6 +7,7 @@
 #include "PixyNavigation.h"
 
 
+
 //Setup Vertical Stepper Motors
 const int stepsPerRevolution = 200;  // change this to fit the number of steps per revolution
 // initialize the stepper library on pins 30 through 33:
@@ -25,11 +26,11 @@ int horStepCount; // number of steps the motor has taken
 #define horRelay 48
 #define vertRelay 49
 
+
 void setup() {
 
   setupMotors();
   setupSteppers();
-  setupSonar(); 
   setupEncoders();
   SetupPixy();
   Serial.begin(9600);
@@ -44,7 +45,7 @@ void setup() {
   //Set pin for Vertical Stepper motor relay to output
   pinMode(vertRelay, OUTPUT);
   digitalWrite(vertRelay, HIGH);
-
+  
 }
 
 
@@ -56,13 +57,14 @@ void loop() {
   
   if(analogRead(switchRight)>1015)
   {  
-    /*  
+    
+    
     if(!flag) // Runs this code once
     {
       
       flag = true;
-      
-      
+      //driveOn(DirForward, 15, 3, 5);
+      /*
       //driveOn(DirLeft, 30, 5, 25); //Args:  Direction (DirForward, DirBackward, DirLeft, DirRight, DirRotateLeft, DirRotateRight)
                                                    //       Speed (min 1 to max 90)
                                                    //       Low Bound Tolerance (Keep this as is unless need to tweek.)
@@ -99,14 +101,17 @@ void loop() {
       //myStepper.step(-stepsPerRevolution);
       //delay(500);
       
-  
-    }
     */
-    
-    //driveOn(DirForward, 30, 5, 25);
-    //delay(3000);
-    //driveOff();
+    }
+
     CheckPixy();
+    /*Serial.print("Sonar1: ");
+    Serial.println(sonar1.GetDistance());
+    Serial.print("Sonar2: ");
+    Serial.println(sonar2.GetDistance());*/
+    
+    
+    
   }
   else
   {
