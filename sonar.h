@@ -3,17 +3,11 @@
 
 #include <Arduino.h>
 
-class Sonar
-{
-public:
-  Sonar(int);
-  int GetDistance();
-private:
-  unsigned long timer;
-  int trigPin;
-  int echoPin;
-  int distance;
+
+  void SetupSonar(int, int);
+  void GetDistance(unsigned long& sonar1, unsigned long& sonar2);
   void checkSonar();
-};
+  void trigger(int);
+  
 
 #endif

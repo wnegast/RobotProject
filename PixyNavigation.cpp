@@ -2,6 +2,7 @@
 #include "PixyNavigation.h"
 #include "Encoders.h"
 #include "Sonar.h"
+#include <Stepper.h>
 // This is the main Pixy object
 
 Pixy pixy;
@@ -10,9 +11,19 @@ int16_t blocksig;
 bool haveBlock;
 int zone;
 int layout;
+int state;
 
-Sonar sonar1(SONAR_1);
-Sonar sonar2(SONAR_2);
+int vertStepCount; // number of steps the motor has taken
+int horStepCount; // number of steps the motor has taken
+
+const int stepsPerRevolution = 200;
+
+Stepper vertStepper(stepsPerRevolution, 34, 35, 36, 37);
+
+//Setup Horizontal Stepper Motor
+// initialize the stepper library on pins 30 through 33:
+Stepper horStepper(stepsPerRevolution, 30, 31, 32, 33);
+
 int color;
 
 //This will hold the function that releases the block into the right container
@@ -24,6 +35,10 @@ void SetupPixy()
   haveBlock = false;
   blocksig = -1;
   pixy.init();
+  setupSteppers();
+  SetupSonar(SONAR_1, SONAR_2);
+  vertStepCount = 0;
+  state = FAR;
 
   //Assume version 1 for now
   layout = LAYOUT_A;
@@ -42,6 +57,9 @@ void SetupPixy()
 
 void CheckPixy()
 {
+  //test();
+  //RaiseClaw();
+
   static int i = 0;
   int j;
   uint16_t numBlocks;
@@ -105,30 +123,114 @@ void CheckHeight(int distance)
   }
 }
 
+void test()
+{
+  unsigned long distanceSonar;
+  unsigned long distanceSonar2;
+
+  GetDistance(distanceSonar, distanceSonar2);
+  Serial.print("Sonar1: ");
+  Serial.println(distanceSonar);
+  Serial.print("Sonar2: ");
+  Serial.println(distanceSonar2);
+}
+
 int CheckDistance()
 {
 
   int distance = DIST_CONST / pixy.blocks[blocksig].width;
-  int distanceSonar = sonar1.GetDistance();
+  unsigned long distanceSonar;
+  unsigned long distanceSonar2;
 
-  if (sonar2.GetDistance() < distanceSonar)
+  GetDistance(distanceSonar, distanceSonar2);
+  
+  if (distanceSonar < distanceSonar2)
   {
-    distanceSonar = sonar2.GetDistance();
+    distanceSonar = distanceSonar2;
   }
   static bool movingLeft = false;
   static bool movingRight = false;
   static bool movingFW = false;
-  Serial.println(pixy.blocks[blocksig].x);
+  static bool centered = false;
+  //Serial.println(pixy.blocks[blocksig].x);
   //Serial.println(pixy.blocks[0].width);
 
-  float centeringMod = (distance / MIN_DIST) * MIN_TOLERANCE;
-  int speed = 15;
+  float centeringMod = ((float)distanceSonar / (float)MIN_DIST) * (float)MIN_TOLERANCE;
+  int speed = 14;
   
   int diff = (PIXY_MAX_X / 2) - (pixy.blocks[blocksig].x + (pixy.blocks[blocksig].width / 2)) + HOR_OFFSET;
-  
-  if (distanceSonar > MIN_DIST)
+
+  if (distanceSonar <= MIN_DIST)
   {
+    state = CLOSE;
+  }
+  else if (distanceSonar <= (MIN_DIST + 1200))
+  {
+    state = MED;
+  }
+  
+  if (state == FAR)
+  {
+    /*
+    Serial.print("Diff: ");
+    Serial.println(diff);
+
+    Serial.print("Mod: ");
+    Serial.println(centeringMod);
+    */
     if (diff > centeringMod)
+    {
+      if(!movingLeft)
+      {
+        movingLeft = true;
+        movingRight = false;
+        movingFW = false;
+        driveOff();
+        driveOn(DirLeft, speed, 5, 25);
+        //Serial.println("Begin Left");
+      }
+      //Serial.println("Moving Left");
+    }
+    else if(diff < -centeringMod)
+    {
+      if(!movingRight)
+      {
+        movingLeft = false;
+        movingRight = true;
+        movingFW = false;
+        driveOff();
+        driveOn(DirRight, speed, 5, 25);
+        //Serial.println("Begin Right");
+      }
+      //Serial.println("Moving Right");
+      
+    }
+    else
+    {
+      if(!movingFW)
+      {
+        movingLeft = false;
+        movingRight = false;
+        movingFW = true;
+        driveOff();
+        driveOn(DirForward, speed, 5, 25);
+        //Serial.println("Begin FW");
+      }  
+      //Serial.println("Moving Forward");
+    }
+  }
+  else if (state == MED)
+  {
+    if (!centered)
+    {
+      driveOff();
+      movingLeft = false;
+      movingRight = false;
+      movingFW = false;
+      CenterRobot();
+      centered = true;
+    }
+    else if (diff > centeringMod)
     {
       if(!movingLeft)
       {
@@ -175,31 +277,138 @@ int CheckDistance()
     movingLeft = false;
     movingRight = false;
     movingFW = false;
-    //Serial.println("Stopping");
-    }
+    CenterRobot();
+    CenterClaw();
+    RaiseClaw();
+    driveOn(DirForward, speed, 5, 25);
+    delay(700);
+    driveOff();
+    delay(2000);
+    digitalWrite(vertRelay, HIGH);
+   }
   
     return distance;
 }
 
 void CenterRobot()
 {
-  int difference = sonar1.GetDistance() - sonar2.GetDistance();
+  Serial.println("Centering");
+  unsigned long distanceSonar;
+  unsigned long distanceSonar2;
+  GetDistance(distanceSonar, distanceSonar2);
+
+  /*
+  Serial.print("Sonar1: ");
+  Serial.println(distanceSonar);
+  Serial.print("Sonar2: ");
+  Serial.println(distanceSonar2);
+  */
+  
+  int difference = distanceSonar2 - distanceSonar;
+  bool right = true;
   if (difference > ROT_TOL)
     {
-      driveOn(DirRotateRight, 10, 5, 25);
+      right = true;
+      //driveOn(DirRotateRight, 14, 5, 25);
     }
     else if(difference < -ROT_TOL)
     {
-      driveOn(DirRotateLeft, 10, 5, 25);
+      //driveOn(DirRotateLeft, 14, 5, 25);
+      right = false;
     }
-  
-  while(difference > ROT_TOL || difference < -ROT_TOL)
+  if(right)
   {
-    difference = sonar1.GetDistance() - sonar2.GetDistance();
-  
+    while(difference >= 0)
+    {
+      driveOn(DirRotateRight, 14, 5, 25);
+      delay(50);
+      driveOff();
+      GetDistance(distanceSonar, distanceSonar2);
+      
+      difference = distanceSonar2 - distanceSonar;
+      //Serial.print("Diff: ");
+      //Serial.println(difference);
+    }
   }
-  driveOff();
+  else
+  {
+    while(difference <= 0)
+    {
+      driveOn(DirRotateLeft, 14, 5, 25);
+      delay(50);
+      driveOff();
+      GetDistance(distanceSonar, distanceSonar2);
+      difference = distanceSonar2 - distanceSonar;
+    }
+  }
   
+  driveOff();
+}
+
+void CenterClaw()
+{
+  blocksig = 0;
+  int numBlocks = pixy.getBlocks();
+  int tolerance = 5;
+  int diff = (PIXY_MAX_X / 2) - (pixy.blocks[blocksig].x + (pixy.blocks[blocksig].width / 2)) + 20;
+  int stp = 5;
+  while(diff > tolerance || diff < -tolerance)
+  {
+    Serial.print("Diff: ");
+    Serial.println(diff);
+    if (diff > tolerance)
+    {
+      if (diff > 2*tolerance)
+      {
+        stp = 10;
+      }
+      else
+      {
+        stp = 5;
+      }
+      digitalWrite(horRelay,LOW);
+      horStepper.step(-stp);
+      horStepCount += -stp;
+      digitalWrite(horRelay, HIGH);
+    }
+    else if(diff < -tolerance)
+    {
+      if (diff < -2*tolerance)
+      {
+        stp = 10;
+      }
+      else
+      {
+        stp = 5;
+      }
+      digitalWrite(horRelay,LOW);
+      horStepper.step(stp);
+      horStepCount += stp;
+      digitalWrite(horRelay, HIGH);
+    }
+    delay(200);
+    pixy.getBlocks();
+    diff = (PIXY_MAX_X / 2) - (pixy.blocks[blocksig].x + (pixy.blocks[blocksig].width / 2)) + 20;
+    if(horStepCount >= 500 || horStepCount <= -500)
+    {
+      break;
+    }
+  }
+  
+
+  driveOff();
+  //driveOn(DirForward, 15, 5, 25);
+  delay(800);
+  driveOff();
+}
+
+void RaiseClaw()
+{
+    digitalWrite(vertRelay,LOW);
+    vertStepper.step(375);
+    vertStepCount += 375;
+    delay(1000);
+      
 }
 
 void MoveForward()
@@ -332,5 +541,18 @@ void PutOnBoat()
     
   }
 }
+
+void setupSteppers() {
+
+    // set the speed at 60 rpm:
+    vertStepper.setSpeed(50);
+    vertStepCount = 0; // number of steps the motor has taken
+
+    // set the speed at 60 rpm:
+    horStepper.setSpeed(60);
+    horStepCount = 0; // number of steps the motor has taken
+
+}
+
 
 

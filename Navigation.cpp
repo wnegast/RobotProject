@@ -13,7 +13,7 @@ void setupMotors() {
   BR.attach(13, 1000, 2000);
   BL.attach(12, 1000, 2000);
   FR.write(90);     //  x - x
-  FL.write(90);     //  - - -
+  FL.write(90);     //  - - -8
   BR.write(90);     //  x - x
   BL.write(90);
 }

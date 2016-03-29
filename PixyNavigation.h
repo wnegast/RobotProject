@@ -4,13 +4,15 @@
 #define PIXY_MAX_X 320
 #define PIXY_MAX_Y 200
 #define DIST_CONST 20269
-#define MIN_DIST 200
-#define MIN_TOLERANCE 15
+#define MIN_DIST 1000
+#define MIN_TOLERANCE 25
 #define MAX_SPEED 25
-#define HOR_OFFSET 8
-#define ROT_TOL 50
+#define HOR_OFFSET 4
+#define ROT_TOL 30
 #define SONAR_1 22
 #define SONAR_2 23
+#define horRelay 48
+#define vertRelay 49
 
 
 //Layouts
@@ -29,6 +31,10 @@
 #define YELLOW 4
 #define TAN 5
 
+#define FAR 0
+#define MED 1
+#define CLOSE 2
+
 void SetupPixy();
 void CheckPixy();
 
@@ -36,7 +42,12 @@ void MoveForward();
 void PickupBlock();
 void FindDestination();
 void CheckHeight(int distance);
+void CenterRobot();
 int CheckDistance();
+void setupSteppers();
+void CenterClaw();
+void RaiseClaw();
+void test();
 
 //Functions for finding the correct block containers
 void ZoneA();

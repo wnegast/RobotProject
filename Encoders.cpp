@@ -288,7 +288,7 @@ void syncMotorsForward()
     driveBR(sm_BRspeed);
   }
 
-  Serial.print(sm_FLspeed);
+  /*Serial.print(sm_FLspeed);
   Serial.print("\t");
   Serial.print(sm_FRspeed);
   Serial.print("\t");
@@ -393,7 +393,7 @@ void syncMotorsBackward()
     sm_BRspeed = baseSpeed;
     driveBR(sm_BRspeed);
   }
-
+  /*
   Serial.print(sm_FLspeed);
   Serial.print("\t");
   Serial.print(sm_FRspeed);
@@ -503,6 +503,7 @@ void syncMotorsLeft()
     driveBR(sm_BRspeed);
   }
 
+  /*
   Serial.print(sm_FLspeed);
   Serial.print("\t");
   Serial.print(sm_FRspeed);
@@ -612,6 +613,7 @@ void syncMotorsRight()
     driveBR(sm_BRspeed);
   }
 
+  /*
   Serial.print(sm_FLspeed);
   Serial.print("\t");
   Serial.print(sm_FRspeed);
@@ -720,7 +722,7 @@ void syncMotorsRotateLeft()
     sm_BRspeed = baseSpeed;
     driveBR(sm_BRspeed);
   }
-
+  /*
   Serial.print(sm_FLspeed);
   Serial.print("\t");
   Serial.print(sm_FRspeed);
@@ -829,7 +831,7 @@ void syncMotorsRotateRight()
     sm_BRspeed = baseSpeedR;
     driveBR(sm_BRspeed);
   }
-
+  /*
   Serial.print(sm_FLspeed);
   Serial.print("\t");
   Serial.print(sm_FRspeed);
