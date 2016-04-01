@@ -1,4 +1,4 @@
-
+  
 #include <Arduino.h>
 #include <Stepper.h>
 #include "testFunctions.h"
@@ -9,10 +9,6 @@
 
 //Define pin for switch Right
 #define switchRight A1
-
-//Define pin for Horizontal Stepper motor relay
-
-
 
 void setup() {
 
@@ -42,7 +38,6 @@ bool flag = false;
 
 void loop() {
 
-
   
   if(analogRead(switchRight)>1015)
   {  
@@ -50,8 +45,11 @@ void loop() {
     
     if(!flag) // Runs this code once
     {
-      
+      Serial.println("TEST");
       flag = true;
+      GoThroughBox();
+      SetupLayoutA();
+      //CloseGripper();
       //driveOn(DirRotateRight, 10, 5, 25);
       //delay(2000);
       //driveOff();
@@ -99,10 +97,9 @@ void loop() {
       //delay(500);
       
     */
-    //CenterClaw();
     }
+
     CheckPixy();
-    //CenterClaw();
     /*Serial.print("Sonar1: ");
     Serial.println(sonar1.GetDistance());
     Serial.print("Sonar2: ");
@@ -121,9 +118,23 @@ void loop() {
 
 void GoThroughBox()
 {
-  driveOn(DirForward, 15, 5, 25);
+  driveFL(104);
+  driveFR(104);
+  driveBL(104);
+  driveBR(104);
+  
+  //driveOn(DirForward, 14, 5, 25);
+  delay(100000);
+  driveOff();
+  delay(1);
+}
+
+void SetupLayoutA()
+{
+  driveOn(DirLeft, 15, 5, 25);
   delay(5000);
   driveOff();
+  delay(1);
 }
 
 

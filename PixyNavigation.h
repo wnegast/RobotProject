@@ -35,6 +35,8 @@
 #define MED 1
 #define CLOSE 2
 
+#define GRIPPER_PIN 9
+
 void SetupPixy();
 void CheckPixy();
 
@@ -48,6 +50,8 @@ void setupSteppers();
 void CenterClaw();
 void RaiseClaw();
 void test();
+void CloseGripper();
+void OpenGripper();
 
 //Functions for finding the correct block containers
 void ZoneA();

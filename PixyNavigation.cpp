@@ -3,6 +3,7 @@
 #include "Encoders.h"
 #include "Sonar.h"
 #include <Stepper.h>
+#include <Servo.h>
 // This is the main Pixy object
 
 Pixy pixy;
@@ -12,6 +13,7 @@ bool haveBlock;
 int zone;
 int layout;
 int state;
+Servo gripper;
 
 int vertStepCount; // number of steps the motor has taken
 int horStepCount; // number of steps the motor has taken
@@ -39,6 +41,9 @@ void SetupPixy()
   SetupSonar(SONAR_1, SONAR_2);
   vertStepCount = 0;
   state = FAR;
+
+  gripper.attach(GRIPPER_PIN);
+  gripper.write(180);
 
   //Assume version 1 for now
   layout = LAYOUT_A;
@@ -283,9 +288,15 @@ int CheckDistance()
     driveOn(DirForward, speed, 5, 25);
     delay(700);
     driveOff();
-    delay(2000);
+    delay(2400);
+    CloseGripper();
+    driveOn(DirBackward, speed, 5, 25);
+    delay(3000);
+    driveOff();
+
+    vertStepper.step(-vertStepCount);
     digitalWrite(vertRelay, HIGH);
-   }
+  }
   
     return distance;
 }
@@ -309,19 +320,19 @@ void CenterRobot()
   if (difference > ROT_TOL)
     {
       right = true;
-      //driveOn(DirRotateRight, 14, 5, 25);
+      //driveOn(DirRotateRight, 15, 5, 25);
     }
     else if(difference < -ROT_TOL)
     {
-      //driveOn(DirRotateLeft, 14, 5, 25);
+      //driveOn(DirRotateLeft, 15, 5, 25);
       right = false;
     }
   if(right)
   {
     while(difference >= 0)
     {
-      driveOn(DirRotateRight, 14, 5, 25);
-      delay(50);
+      driveOn(DirRotateRight, 15, 5, 25);
+      delay(60);
       driveOff();
       GetDistance(distanceSonar, distanceSonar2);
       
@@ -334,7 +345,7 @@ void CenterRobot()
   {
     while(difference <= 0)
     {
-      driveOn(DirRotateLeft, 14, 5, 25);
+      driveOn(DirRotateLeft, 15, 5, 25);
       delay(50);
       driveOff();
       GetDistance(distanceSonar, distanceSonar2);
@@ -409,6 +420,18 @@ void RaiseClaw()
     vertStepCount += 375;
     delay(1000);
       
+}
+
+void CloseGripper()
+{
+  Serial.println("OPENING");
+  gripper.write(130);
+  
+}
+
+void OpenGripper()
+{
+  gripper.write(0);
 }
 
 void MoveForward()
